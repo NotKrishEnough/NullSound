@@ -13,7 +13,7 @@ class YtmAccountService {
   static const _storage = FlutterSecureStorage();
   static const _key = 'nullsound_ytm_cookies';
   static const _apiKey = 'AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30';
-  static const _version = '1.20260304.03.00';
+  static const _version = '1.20260707.12.00';
   String? _cookies;
   String? lastError;
   String? _lastHttpError;
@@ -175,26 +175,54 @@ class YtmAccountService {
   Future<List<YtmPlaylist>> fetchPlaylists() async {
     final results = <YtmPlaylist>[];
     final seen = <String>{};
-    for (final browseId in ['FEmusic_library_corpus_playlists','FEmusic_liked_playlists']) {
-      final data = await _browse(browseId);
-      if (data == null) continue;
-      void walk(dynamic node) {
-        if (node is Map) {
-          final renderer = node['playlistRenderer'] ?? node['musicTwoRowItemRenderer'];
-          if (renderer is Map) {
-            final id = renderer['playlistId'] ??
-              renderer['navigationEndpoint']?['browseEndpoint']?['browseId'];
-            final title = renderer['title']?['runs']?[0]?['text'] ??
-              renderer['title']?['simpleText'];
-            if (id is String && title is String && id.isNotEmpty && seen.add(id)) {
-              results.add(YtmPlaylist(id:id,title:title));
+
+    // YouTube Music currently exposes the signed-in playlist library through
+    // FEmusic_liked_playlists. The renderer shape has changed over time, so
+    // parse playlist renderers recursively instead of depending on one path.
+    final data = await _browse('FEmusic_liked_playlists');
+    if (data == null) return results;
+
+    void walk(dynamic node) {
+      if (node is Map) {
+        final renderer = node['musicTwoRowItemRenderer'] ??
+            node['playlistRenderer'] ??
+            node['musicResponsiveListItemRenderer'];
+
+        if (renderer is Map) {
+          final id = renderer['playlistId'] ??
+              renderer['navigationEndpoint']?['browseEndpoint']?['browseId'] ??
+              renderer['thumbnailOverlayNowPlayingRenderer']?['navigationEndpoint']?['watchEndpoint']?['playlistId'];
+
+          final titleData = renderer['title'];
+          String? title;
+          if (titleData is Map) {
+            final runs = titleData['runs'];
+            if (runs is List && runs.isNotEmpty) {
+              title = runs.first['text']?.toString();
             }
+            title ??= titleData['simpleText']?.toString();
           }
-          for (final value in node.values) { walk(value); }
-        } else if (node is List) { for (final value in node) { walk(value); } }
+
+          if (id is String &&
+              id.isNotEmpty &&
+              title != null &&
+              title.trim().isNotEmpty &&
+              seen.add(id)) {
+            results.add(YtmPlaylist(id: id, title: title.trim()));
+          }
+        }
+
+        for (final value in node.values) {
+          walk(value);
+        }
+      } else if (node is List) {
+        for (final value in node) {
+          walk(value);
+        }
       }
-      walk(data);
     }
+
+    walk(data);
     return results;
   }
 }
