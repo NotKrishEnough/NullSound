@@ -20,7 +20,14 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
   List<YtmPlaylist> remotePlaylists = [];
   bool syncing = false;
   @override
-  void initState() { super.initState(); account.restore().then((_) { if (mounted) setState(() {}); }); }
+  void initState() {
+    super.initState();
+    account.restore().then((_) async {
+      if (!mounted) return;
+      setState(() {});
+      if (account.isSignedIn) await syncPlaylists();
+    });
+  }
   Future<void> signIn() async {
     final ok = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => YtmSignInPage(service: account)));
     if (ok == true && mounted) { setState(() {}); await syncPlaylists(); }
