@@ -42,7 +42,7 @@ class _SettingsPageState extends State<SettingsPage> {
     onChanged:(v){setState(()=>update(v));save(key,v);});
   Widget slider(String title,double value,double min,double max,String key,ValueChanged<double> update,{String suffix=''})=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Row(children:[Expanded(child:Text(title)),Text('${value.toStringAsFixed(0)}$suffix',style:Theme.of(context).textTheme.labelLarge)]),
-    Slider(value:value.clamp(min,max),min:min,max:max,onChanged:(v){setState(()=>update(v));save(key,v);})
+    Slider(value:value.clamp(min,max).toDouble(),min:min,max:max,onChanged:(v){setState(()=>update(v));save(key,v);})
   ]);
   @override Widget build(BuildContext context)=>Scaffold(
     backgroundColor:Colors.transparent,
