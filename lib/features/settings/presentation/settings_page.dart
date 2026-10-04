@@ -8,9 +8,9 @@ class SettingsPage extends StatefulWidget {
 }
 class _SettingsPageState extends State<SettingsPage> {
   SharedPreferences? prefs;
-  double blur = 22, glass = .72, roundness = 24, animation = 1;
+  double blur = 22, glass = .72, roundness = 24;
   int accent = 0;
-  bool glow = true, compact = false, artwork = true, haptics = true, animated = true, edgeToEdge = true;
+  bool glow = true, compact = false, artwork = true;
   static const colors = [Color(0xffbd829f),Color(0xff8b80d8),Color(0xff5f9fba),Color(0xff68a88d),Color(0xffd49a63),Color(0xffdc7180),Color(0xffe4e4e4)];
   @override void initState(){super.initState();_load();}
   Future<void> _load() async {
@@ -18,7 +18,7 @@ class _SettingsPageState extends State<SettingsPage> {
     if(!mounted)return;
     setState((){
       prefs=p; blur=p.getDouble('setting_blur')??22; glass=p.getDouble('setting_glass')??.72;
-      roundness=p.getDouble('setting_roundness')??24; animation=p.getDouble('setting_animation')??1;
+      roundness=p.getDouble('setting_roundness')??24;
       accent=p.getInt('setting_accent')??0; glow=p.getBool('setting_glow')??true;
       compact=p.getBool('setting_compact')??false; artwork=p.getBool('setting_artwork')??true;
       haptics=p.getBool('setting_haptics')??true; animated=p.getBool('setting_animated')??true;
