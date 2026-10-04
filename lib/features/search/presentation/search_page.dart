@@ -1,3 +1,4 @@
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/audio/audio_provider.dart';
@@ -24,26 +25,32 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     try {
       final found = await ref.read(streamingServiceProvider).search(query.trim());
       if (mounted) setState(() => results = found);
-    } catch (e) {
+    } catch (_) {
       if (mounted) setState(() => error = 'Search failed. Check your connection and try again.');
     } finally {
       if (mounted) setState(() => loading = false);
     }
   }
 
-  Future<void> play(dynamic video) async {
+  Future<void> play(int selectedIndex) async {
     try {
       setState(() => error = null);
       final service = ref.read(streamingServiceProvider);
-      final stream = await service.resolve(video.id.value);
-      await ref.read(audioHandlerProvider).playStream(
-        url: stream.url.toString(),
+      final items = results.map<MediaItem>((video) => MediaItem(
         id: video.id.value,
         title: video.title,
         artist: video.author,
-        artworkUrl: video.thumbnails.highResUrl,
+        artUri: Uri.tryParse(video.thumbnails.highResUrl),
+      )).toList();
+      await ref.read(audioHandlerProvider).playQueue(
+        items: items,
+        startIndex: selectedIndex,
+        resolve: (item) async {
+          final stream = await service.resolve(item.id);
+          return stream.url.toString();
+        },
       );
-    } catch (e) {
+    } catch (_) {
       if (mounted) setState(() => error = 'Could not start this track. Try another result.');
     }
   }
@@ -81,7 +88,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               title: Text(video.title, maxLines: 1, overflow: TextOverflow.ellipsis),
               subtitle: Text(video.author, maxLines: 1, overflow: TextOverflow.ellipsis),
               trailing: const Icon(Icons.play_circle_outline),
-              onTap: () => play(video),
+              onTap: () => play(index),
             );
           },
         )),
