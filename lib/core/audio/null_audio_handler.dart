@@ -10,12 +10,6 @@ class NullAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
   StreamUrlResolver? _resolver;
   bool _changingTrack = false;
 
-  static const _streamHeaders = <String, String>{
-    'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
-    'Referer': 'https://www.youtube.com/',
-    'Origin': 'https://www.youtube.com',
-  };
-
   NullAudioHandler() {
     player.playbackEventStream.listen((event) {
       playbackState.add(PlaybackState(
@@ -71,7 +65,6 @@ class NullAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
       }
       await player.setAudioSource(AudioSource.uri(
         uri,
-        headers: _streamHeaders,
         tag: item,
       ));
       if (autoplay) await player.play();
