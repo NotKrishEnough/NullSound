@@ -30,6 +30,24 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     catch (_) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Playlist sync failed. Try again later.'))); }
     finally { if (mounted) setState(() => syncing = false); }
   }
+  Future<void> importRemotePlaylist(YtmPlaylist remote) async {
+    setState(() => syncing = true);
+    try {
+      final songs = await account.fetchPlaylistTracks(remote.id);
+      if (songs.isEmpty) throw StateError('No tracks returned');
+      var name = remote.title;
+      var suffix = 2;
+      while (LibraryStore.playlists.any((p) => p['name'] == name)) { name = '${remote.title} (${suffix++})'; }
+      await LibraryStore.createPlaylist(name);
+      for (final song in songs) {
+        await LibraryStore.addToPlaylist(name, MediaItem(id: song['id']!, title: song['title']!, artist: song['artist']!, extras: const {'source':'youtube_music'}));
+      }
+      if (mounted) { setState(() {}); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported ${songs.length} tracks to $name'))); }
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not import this playlist. The YouTube Music response may have changed.')));
+    } finally { if (mounted) setState(() => syncing = false); }
+  }
+
   Future<void> createPlaylist() async {
     final controller = TextEditingController();
     final name = await showDialog<String>(context: context, builder: (context) => AlertDialog(
@@ -73,7 +91,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
           selected: {tab}, onSelectionChanged: (value) => setState(() => tab = value.first),
         )),
         if (account.isSignedIn && tab == 1) Padding(padding: const EdgeInsets.fromLTRB(16,8,16,0), child: Row(children:[const Expanded(child:Text('YouTube Music playlists')), TextButton(onPressed:syncing ? null : syncPlaylists, child:const Text('Sync'))])),
-        if (account.isSignedIn && tab == 1 && remotePlaylists.isNotEmpty) SizedBox(height:110, child:ListView.builder(scrollDirection:Axis.horizontal,itemCount:remotePlaylists.length,itemBuilder:(context,index){final item=remotePlaylists[index];return SizedBox(width:190,child:Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Icon(Icons.cloud_queue),const Spacer(),Text(item.title,maxLines:2,overflow:TextOverflow.ellipsis),Text('YouTube Music',style:Theme.of(context).textTheme.labelSmall)]))));})),
+        if (account.isSignedIn && tab == 1 && remotePlaylists.isNotEmpty) SizedBox(height:110, child:ListView.builder(scrollDirection:Axis.horizontal,itemCount:remotePlaylists.length,itemBuilder:(context,index){final item=remotePlaylists[index];return SizedBox(width:210,child:Card(child:Padding(padding:const EdgeInsets.all(10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Icon(Icons.cloud_queue),Expanded(child:Align(alignment:Alignment.centerLeft,child:Text(item.title,maxLines:2,overflow:TextOverflow.ellipsis))),SizedBox(height:30,child:Align(alignment:Alignment.centerRight,child:TextButton(onPressed:syncing ? null : () => importRemotePlaylist(item),child:const Text('Import'))))]))));})),
         const SizedBox(height: 8),
         Expanded(child: tab == 0
           ? tracks.isEmpty
