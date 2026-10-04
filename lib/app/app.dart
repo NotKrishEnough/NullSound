@@ -10,7 +10,7 @@ class NullSoundApp extends StatelessWidget {
     future:SharedPreferences.getInstance(),
     builder:(context,snapshot){
       final prefs=snapshot.data;
-      final index=(prefs?.getInt('setting_accent')??0).clamp(0,accents.length-1);
+      final index=(prefs?.getInt('setting_accent')??0).clamp(0,accents.length-1).toInt();
       final seed=accents[index];
       final dark=ColorScheme.fromSeed(seedColor:seed,brightness:Brightness.dark);
       final light=ColorScheme.fromSeed(seedColor:seed,brightness:Brightness.light);
