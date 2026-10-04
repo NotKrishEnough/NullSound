@@ -10,6 +10,12 @@ class NullAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
   StreamUrlResolver? _resolver;
   bool _changingTrack = false;
 
+  static const _streamHeaders = <String, String>{
+    'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+    'Referer': 'https://www.youtube.com/',
+    'Origin': 'https://www.youtube.com',
+  };
+
   NullAudioHandler() {
     player.playbackEventStream.listen((event) {
       playbackState.add(PlaybackState(
@@ -57,9 +63,22 @@ class NullAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
     try {
       final item = _items[_index];
       mediaItem.add(item);
-      final url = await _resolver!(item);
-      await player.setAudioSource(AudioSource.uri(Uri.parse(url), tag: item));
+      await player.stop();
+      final rawUrl = await _resolver!(item);
+      final uri = Uri.tryParse(rawUrl);
+      if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) {
+        throw const FormatException('The stream resolver returned an invalid audio URL.');
+      }
+      await player.setAudioSource(AudioSource.uri(
+        uri,
+        headers: _streamHeaders,
+        tag: item,
+      ));
       if (autoplay) await player.play();
+    } on PlayerException catch (e) {
+      throw StateError('Audio source rejected (code ${e.code}): ${e.message ?? e.toString()}');
+    } on PlayerInterruptedException {
+      rethrow;
     } finally {
       _changingTrack = false;
     }
