@@ -37,6 +37,9 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Generate Android platform project
+        run: flutter create --platforms=android --project-name nullsound --org com.nke.nullsound --overwrite .
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -63,7 +66,7 @@ jobs:
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             PREVIOUS_TAG="$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
             if [ -n "$PREVIOUS_TAG" ]; then
-              git log --pretty=format:'- %s (%h)' "$PREVIOUS_TAG".."${GITHUB_REF_NAME}" > dist/CHANGELOG.md
+              git log --pretty=format:'- %s (%h)' "$PREVIOUS_TAG".." ${GITHUB_REF_NAME}" > dist/CHANGELOG.md
             else
               git log -10 --pretty=format:'- %s (%h)' > dist/CHANGELOG.md
             fi
