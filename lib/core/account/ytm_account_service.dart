@@ -59,6 +59,7 @@ class YtmAccountService {
       'x-youtube-client-version': _version,
       'x-origin': 'https://music.youtube.com',
       'Content-Type': 'application/json',
+      'X-Goog-AuthUser': '0',
     };
     final map = <String,String>{};
     for (final part in (_cookies ?? '').split(';')) {
@@ -76,13 +77,30 @@ class YtmAccountService {
 
   Future<Map<String,dynamic>?> _browse(String browseId) async {
     if (!isSignedIn) return null;
+    return _postBrowse({'browseId': browseId});
+  }
+
+  Future<Map<String,dynamic>?> _browseContinuation(String token) async {
+    if (!isSignedIn || token.isEmpty) return null;
+    return _postBrowse({'continuation': token});
+  }
+
+  Future<Map<String,dynamic>?> _postBrowse(Map<String,dynamic> body) async {
     _lastHttpError = null;
     final response = await http.post(
       Uri.parse('https://music.youtube.com/youtubei/v1/browse?key=$_apiKey&prettyPrint=false'),
       headers: _headers(),
-      body: jsonEncode({'context': {'client': {
-        'clientName':'WEB_REMIX','clientVersion':_version,'hl':'en','gl':'US'
-      }}, 'browseId':browseId}),
+      body: jsonEncode({
+        'context': {
+          'client': {
+            'clientName': 'WEB_REMIX',
+            'clientVersion': _version,
+            'hl': 'en',
+            'gl': 'US',
+          }
+        },
+        ...body,
+      }),
     ).timeout(const Duration(seconds: 15));
     if (response.statusCode != 200) {
       _lastHttpError = 'YouTube Music returned HTTP ${response.statusCode}.';
@@ -90,6 +108,36 @@ class YtmAccountService {
     }
     final decoded = jsonDecode(response.body);
     return decoded is Map<String,dynamic> ? decoded : null;
+  }
+
+  String? _findContinuation(dynamic node) {
+    if (node is Map) {
+      final direct = node['continuation'];
+      if (direct is String && direct.isNotEmpty) return direct;
+
+      final next = node['nextContinuationData'];
+      if (next is Map) {
+        final token = next['continuation'];
+        if (token is String && token.isNotEmpty) return token;
+      }
+
+      final command = node['continuationCommand'];
+      if (command is Map) {
+        final token = command['token'];
+        if (token is String && token.isNotEmpty) return token;
+      }
+
+      for (final value in node.values) {
+        final token = _findContinuation(value);
+        if (token != null) return token;
+      }
+    } else if (node is List) {
+      for (final value in node) {
+        final token = _findContinuation(value);
+        if (token != null) return token;
+      }
+    }
+    return null;
   }
 
 
@@ -175,16 +223,12 @@ class YtmAccountService {
   Future<List<YtmPlaylist>> fetchPlaylists() async {
     final results = <YtmPlaylist>[];
     final seen = <String>{};
+    String? continuation;
 
-    // YouTube Music currently exposes the signed-in playlist library through
-    // FEmusic_liked_playlists. The renderer shape has changed over time, so
-    // parse playlist renderers recursively instead of depending on one path.
-    final data = await _browse('FEmusic_liked_playlists');
-    if (data == null) return results;
-
-    void walk(dynamic node) {
+    void parse(dynamic node) {
       if (node is Map) {
-        final renderer = node['musicTwoRowItemRenderer'] ??
+        final renderer = node['gridPlaylistRenderer'] ??
+            node['musicTwoRowItemRenderer'] ??
             node['playlistRenderer'] ??
             node['musicResponsiveListItemRenderer'];
 
@@ -213,16 +257,26 @@ class YtmAccountService {
         }
 
         for (final value in node.values) {
-          walk(value);
+          parse(value);
         }
       } else if (node is List) {
         for (final value in node) {
-          walk(value);
+          parse(value);
         }
       }
     }
 
-    walk(data);
+    // FEmusic_liked_playlists is the current authenticated YT Music
+    // library endpoint. It returns a paginated grid for larger libraries.
+    var data = await _browse('FEmusic_liked_playlists');
+    if (data == null) return results;
+
+    for (var page = 0; page < 20 && data != null; page++) {
+      parse(data);
+      continuation = _findContinuation(data);
+      if (continuation == null) break;
+      data = await _browseContinuation(continuation);
+    }
+
     return results;
-  }
-}
+  }}
