@@ -22,6 +22,9 @@ dependencies:
   flutter_animate: ^4.5.2
   lyrics_parser: ^1.0.1
   permission_handler: ^12.0.0
+  webview_flutter: ^4.4.2
+  flutter_secure_storage: ^9.0.0
+  crypto: ^3.0.7
 dev_dependencies:
   flutter_test:
     sdk: flutter
