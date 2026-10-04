@@ -21,7 +21,7 @@ class MiniPlayer extends ConsumerWidget {
           borderRadius:BorderRadius.circular(22),
           child:BackdropFilter(filter:ImageFilter.blur(sigmaX:22,sigmaY:22),child:Container(
             decoration:BoxDecoration(color:const Color(0xff382b33).withValues(alpha:.88),borderRadius:BorderRadius.circular(22),border:Border.all(color:Colors.white.withValues(alpha:.14))),
-            child:ListTile(
+            child:Column(mainAxisSize:MainAxisSize.min,children:[ListTile(
               dense:compact,contentPadding:const EdgeInsets.symmetric(horizontal:12,vertical:2),
               leading:!artwork?const Icon(Icons.graphic_eq_rounded,size:32):item.artUri==null?const Icon(Icons.music_note):ClipRRect(borderRadius:BorderRadius.circular(10),child:Image.network(item.artUri.toString(),width:compact?42:50,height:compact?42:50,fit:BoxFit.cover,errorBuilder:(_,__,___)=>const Icon(Icons.music_note))),
               title:Text(item.title,maxLines:1,overflow:TextOverflow.ellipsis),
@@ -29,6 +29,8 @@ class MiniPlayer extends ConsumerWidget {
               trailing:StreamBuilder<PlaybackState>(stream:handler.playbackState,builder:(context,state)=>IconButton(icon:Icon(state.data?.playing==true?Icons.pause_rounded:Icons.play_arrow_rounded,size:30),onPressed:()=>state.data?.playing==true?handler.pause():handler.play())),
               onTap:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>FullPlayerPage(handler:handler))),
             ),
+            StreamBuilder<Duration?>(stream:handler.player.durationStream,builder:(context,duration){final total=duration.data?.inMilliseconds??0;return StreamBuilder<Duration>(stream:handler.player.positionStream,builder:(context,position){final current=position.data?.inMilliseconds??0;return LinearProgressIndicator(minHeight:2,value:total>0?(current/total).clamp(0,1).toDouble():null,backgroundColor:Colors.white.withValues(alpha:.10));});}),
+            ]),
           )),
         ));
       });
