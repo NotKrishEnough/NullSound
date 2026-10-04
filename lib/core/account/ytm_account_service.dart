@@ -93,6 +93,52 @@ class YtmAccountService {
   }
 
 
+  Future<String?> resolveStreamUrl(String videoId) async {
+    if (!isSignedIn) return null;
+    try {
+      final response = await http.post(
+        Uri.parse('https://music.youtube.com/youtubei/v1/player?key=$_apiKey&prettyPrint=false'),
+        headers: _headers(),
+        body: jsonEncode({
+          'context': {
+            'client': {
+              'clientName': 'WEB_REMIX',
+              'clientVersion': _version,
+              'hl': 'en',
+              'gl': 'US',
+            }
+          },
+          'videoId': videoId,
+          'contentCheckOk': true,
+          'racyCheckOk': true,
+        }),
+      ).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body);
+      if (data is! Map) return null;
+      final status = data['playabilityStatus'];
+      if (status is Map && status['status'] != 'OK') return null;
+      final formats = <Map>[];
+      final streaming = data['streamingData'];
+      if (streaming is Map) {
+        for (final key in ['adaptiveFormats', 'formats']) {
+          final values = streaming[key];
+          if (values is List) formats.addAll(values.whereType<Map>());
+        }
+      }
+      final audio = formats.where((f) {
+        final mime = f['mimeType']?.toString().toLowerCase() ?? '';
+        return mime.startsWith('audio/') && f['url'] is String;
+      }).toList();
+      if (audio.isEmpty) return null;
+      audio.sort((a,b) => (int.tryParse('${a['bitrate']}') ?? 0)
+          .compareTo(int.tryParse('${b['bitrate']}') ?? 0));
+      return audio.last['url']?.toString();
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<List<Map<String,String>>> fetchPlaylistTracks(String playlistId) async {
     final data = await _browse(playlistId.startsWith('VL') ? playlistId : 'VL$playlistId');
     if (data == null) return [];
