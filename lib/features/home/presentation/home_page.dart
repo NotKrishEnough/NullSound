@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../app/glass.dart';
+import '../../settings/presentation/settings_page.dart';
 
 class HomePage extends StatelessWidget {
  const HomePage({super.key});
@@ -11,7 +12,7 @@ class HomePage extends StatelessWidget {
     const SizedBox(width: 12),
     Text('NullSound', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900,letterSpacing:-1)),
     const Spacer(),
-    const Icon(Icons.account_circle_outlined,size:28),
+    IconButton(tooltip:'Settings',onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const SettingsPage())),icon:const Icon(Icons.tune_rounded,size:26)),
    ]),
    const SizedBox(height: 8),
    Text('Find your next favourite.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha:.72))),
