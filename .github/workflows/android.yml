@@ -44,7 +44,13 @@ jobs:
         run: flutter analyze
 
       - name: Run tests
-        run: flutter test
+        shell: bash
+        run: |
+          if [ -d test ]; then
+            flutter test
+          else
+            echo 'No test/ directory yet; skipping Flutter tests.'
+          fi
 
       - name: Build release APK
         run: flutter build apk --release
