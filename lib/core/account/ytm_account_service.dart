@@ -15,23 +15,32 @@ class YtmAccountService {
   static const _apiKey = 'AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30';
   static const _version = '1.20260304.03.00';
   String? _cookies;
+  String? lastError;
+  String? _lastHttpError;
   bool get isSignedIn => _cookies != null && _cookies!.isNotEmpty;
 
   Future<void> restore() async => _cookies = await _storage.read(key: _key);
 
   Future<bool> saveAndVerify(String cookies) async {
+    lastError = null;
     if (!cookies.contains('SAPISID') &&
         !cookies.contains('__Secure-3PAPISID') &&
         !cookies.contains('SID')) {
+      lastError = 'The WebView did not expose a YouTube session cookie (SAPISID/SID).';
       return false;
     }
     _cookies = cookies;
     try {
       final response = await _browse('FEmusic_library_corpus_playlists');
-      if (response == null) return false;
+      if (response == null) {
+        lastError = _lastHttpError ?? 'YouTube Music did not accept this session.';
+        _cookies = null;
+        return false;
+      }
       await _storage.write(key: _key, value: cookies);
       return true;
-    } catch (_) {
+    } catch (e) {
+      lastError = 'Session check failed: $e';
       _cookies = null;
       return false;
     }
@@ -67,6 +76,7 @@ class YtmAccountService {
 
   Future<Map<String,dynamic>?> _browse(String browseId) async {
     if (!isSignedIn) return null;
+    _lastHttpError = null;
     final response = await http.post(
       Uri.parse('https://music.youtube.com/youtubei/v1/browse?key=$_apiKey&prettyPrint=false'),
       headers: _headers(),
@@ -74,7 +84,10 @@ class YtmAccountService {
         'clientName':'WEB_REMIX','clientVersion':_version,'hl':'en','gl':'US'
       }}, 'browseId':browseId}),
     ).timeout(const Duration(seconds: 15));
-    if (response.statusCode != 200) return null;
+    if (response.statusCode != 200) {
+      _lastHttpError = 'YouTube Music returned HTTP ${response.statusCode}.';
+      return null;
+    }
     final decoded = jsonDecode(response.body);
     return decoded is Map<String,dynamic> ? decoded : null;
   }
