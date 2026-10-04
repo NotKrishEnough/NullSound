@@ -34,10 +34,10 @@ class _FullPlayerPageState extends State<FullPlayerPage>{
             final duration=durationSnap.data??Duration.zero;
             return StreamBuilder<Duration>(stream:widget.handler.player.positionStream,builder:(context,posSnap){
               final position=posSnap.data??Duration.zero;
-              final max=duration.inMilliseconds.toDouble().clamp(1,double.infinity);
-              final value=seeking?seekValue:position.inMilliseconds.toDouble().clamp(0,max);
+              final max=duration.inMilliseconds.toDouble().clamp(1,double.infinity).toDouble();
+              final value=seeking?seekValue:position.inMilliseconds.toDouble().clamp(0,max).toDouble();
               return Column(children:[
-                Slider(value:value.clamp(0,max).toDouble(),min:0,max:max,onChangeStart:(v){setState(()=>{seeking=true,seekValue=v});},onChanged:(v)=>setState(()=>seekValue=v),onChangeEnd:(v){widget.handler.seek(Duration(milliseconds:v.round()));setState(()=>seeking=false);}),
+                Slider(value:value.clamp(0,max).toDouble(),min:0,max:max,onChangeStart:(v){setState(() { seeking=true; seekValue=v; });},onChanged:(v)=>setState(()=>seekValue=v),onChangeEnd:(v){widget.handler.seek(Duration(milliseconds:v.round()));setState(()=>seeking=false);}),
                 Row(children:[Text(time(position),style:Theme.of(context).textTheme.labelMedium),const Spacer(),Text(time(duration),style:Theme.of(context).textTheme.labelMedium)]),
               ]);
             });
