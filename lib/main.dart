@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
 import 'core/audio/audio_provider.dart';
 import 'core/audio/null_audio_handler.dart';
+import 'core/library/library_store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await LibraryStore.init();
   final handler = await AudioService.init<NullAudioHandler>(
     builder: NullAudioHandler.new,
     config: const AudioServiceConfig(
