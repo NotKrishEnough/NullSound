@@ -1,8 +1,14 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 
+typedef StreamUrlResolver = Future<String> Function(MediaItem item);
+
 class NullAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
   final AudioPlayer player = AudioPlayer();
+  List<MediaItem> _items = [];
+  int _index = 0;
+  StreamUrlResolver? _resolver;
+  bool _changingTrack = false;
 
   NullAudioHandler() {
     player.playbackEventStream.listen((event) {
@@ -27,25 +33,55 @@ class NullAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
         speed: player.speed,
       ));
     });
+    player.processingStateStream.listen((state) {
+      if (state == ProcessingState.completed && !_changingTrack) skipToNext();
+    });
   }
 
-  Future<void> playStream({
-    required String url,
-    required String id,
-    required String title,
-    required String artist,
-    String? artworkUrl,
+  Future<void> playQueue({
+    required List<MediaItem> items,
+    required int startIndex,
+    required StreamUrlResolver resolve,
   }) async {
-    final item = MediaItem(
-      id: id,
-      title: title,
-      artist: artist,
-      artUri: artworkUrl == null ? null : Uri.tryParse(artworkUrl),
-    );
-    mediaItem.add(item);
-    queue.add([item]);
-    await player.setAudioSource(AudioSource.uri(Uri.parse(url), tag: item));
-    await player.play();
+    if (items.isEmpty || startIndex < 0 || startIndex >= items.length) return;
+    _items = List.unmodifiable(items);
+    _index = startIndex;
+    _resolver = resolve;
+    queue.add(_items);
+    await _loadCurrent(autoplay: true);
+  }
+
+  Future<void> _loadCurrent({required bool autoplay}) async {
+    if (_items.isEmpty || _resolver == null) return;
+    _changingTrack = true;
+    try {
+      final item = _items[_index];
+      mediaItem.add(item);
+      final url = await _resolver!(item);
+      await player.setAudioSource(AudioSource.uri(Uri.parse(url), tag: item));
+      if (autoplay) await player.play();
+    } finally {
+      _changingTrack = false;
+    }
+  }
+
+  @override
+  Future<void> skipToNext() async {
+    if (_index + 1 >= _items.length) return;
+    _index++;
+    await _loadCurrent(autoplay: true);
+  }
+
+  @override
+  Future<void> skipToPrevious() async {
+    if (_items.isEmpty) return;
+    if (player.position > const Duration(seconds: 3)) {
+      await player.seek(Duration.zero);
+      return;
+    }
+    if (_index == 0) return;
+    _index--;
+    await _loadCurrent(autoplay: true);
   }
 
   @override
