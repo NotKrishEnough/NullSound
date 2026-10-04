@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/services.dart';
+import 'package:palette_generator/palette_generator.dart';
 import '../../../core/audio/null_audio_handler.dart';
 
 class FullPlayerPage extends StatefulWidget {
@@ -10,6 +11,35 @@ class FullPlayerPage extends StatefulWidget {
 }
 class _FullPlayerPageState extends State<FullPlayerPage>{
   bool seeking=false;
+  Color _backgroundA=const Color(0xff171316);
+  Color _backgroundB=const Color(0xff171316);
+  String? _loadedArtUri;
+
+  Future<void> _updateBackground(String? uri) async {
+    if (uri==null || uri.isEmpty || uri==_loadedArtUri) return;
+    _loadedArtUri=uri;
+    try {
+      final palette=await PaletteGenerator.fromImageProvider(
+        NetworkImage(uri),
+        maximumColorCount:16,
+      );
+      final colors=[
+        palette.darkVibrantColor?.color,
+        palette.darkMutedColor?.color,
+        palette.dominantColor?.color,
+        palette.vibrantColor?.color,
+      ].whereType<Color>().toList();
+      if (!mounted || colors.isEmpty || uri!=_loadedArtUri) return;
+      final a=colors.first;
+      final b=colors.length>1?colors[1]:a;
+      setState((){
+        _backgroundA=Color.lerp(a,Colors.black,.55) ?? const Color(0xff171316);
+        _backgroundB=Color.lerp(b,Colors.black,.68) ?? const Color(0xff171316);
+      });
+    } catch (_) {
+      // Keep the safe dark fallback when artwork colors cannot be resolved.
+    }
+  }
   double seekValue=0;
   @override void initState(){super.initState();SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);}
   @override void dispose(){SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);super.dispose();}
@@ -18,9 +48,28 @@ class _FullPlayerPageState extends State<FullPlayerPage>{
     backgroundColor:const Color(0xff171316),
     body:StreamBuilder<MediaItem?>(stream:widget.handler.mediaItem,builder:(context,itemSnap){
       final item=itemSnap.data;
+      _updateBackground(item?.artUri?.toString());
       return Stack(children:[
         if(item?.artUri!=null) Positioned.fill(child:Image.network(item!.artUri.toString(),fit:BoxFit.cover,errorBuilder:(_,__,___)=>const SizedBox.shrink())),
-        Positioned.fill(child:Container(color:const Color(0xff171316).withValues(alpha:.88))),
+        Positioned.fill(
+          child:DecoratedBox(
+            decoration:BoxDecoration(
+              gradient:LinearGradient(
+                begin:Alignment.topLeft,
+                end:Alignment.bottomRight,
+                colors:[
+                  _backgroundA.withValues(alpha:.96),
+                  Color.lerp(_backgroundA,_backgroundB,.5)!.withValues(alpha:.94),
+                  _backgroundB.withValues(alpha:.98),
+                ],
+                stops:const [0,.52,1],
+              ),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child:Container(color:Colors.black.withValues(alpha:.18)),
+        ),
         SafeArea(top:false,bottom:false,child:Padding(padding:const EdgeInsets.fromLTRB(24,24,24,18),child:Column(children:[
           Row(children:[IconButton(onPressed:()=>Navigator.pop(context),icon:const Icon(Icons.keyboard_arrow_down_rounded,size:34)),const Spacer(),const Text('NOW PLAYING',style:TextStyle(letterSpacing:2,fontWeight:FontWeight.w600)),const Spacer(),IconButton(onPressed:()=>Navigator.pop(context),icon:const Icon(Icons.more_horiz))]),
           const Spacer(),
