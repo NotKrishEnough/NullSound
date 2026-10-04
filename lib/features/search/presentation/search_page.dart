@@ -1,5 +1,6 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
+import '../../../app/glass.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/audio/audio_provider.dart';
 import '../../../core/streaming/streaming_provider.dart';
@@ -79,17 +80,18 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         },
       );
     } catch (_) {
-      if (mounted) setState(() => error = 'Could not start this track. Try another result.');
+      if (mounted) setState(() => error = 'Playback failed: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.transparent,
     appBar: AppBar(title: const Text('Search')),
     body: Padding(
       padding: const EdgeInsets.all(16),
       child: Column(children: [
-        TextField(
+        GlassPanel(radius:24,padding:const EdgeInsets.symmetric(horizontal:8,vertical:3),child:TextField(
           controller: controller,
           textInputAction: TextInputAction.search,
           onSubmitted: search,
@@ -100,14 +102,14 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             filled: true,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
           ),
-        ),
+        )),
         if (loading) const Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()),
         if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
         Expanded(child: ListView.builder(
           itemCount: results.length,
           itemBuilder: (context, index) {
             final video = results[index];
-            return ListTile(
+            return Padding(padding:const EdgeInsets.only(bottom:8),child:GlassPanel(radius:20,child:ListTile(
               leading: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(video.thumbnails.highResUrl, width: 56, height: 56, fit: BoxFit.cover,
@@ -124,7 +126,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 icon: const Icon(Icons.more_vert),
               ),
               onTap: () => play(index),
-            );
+            )));
           },
         )),
       ]),
