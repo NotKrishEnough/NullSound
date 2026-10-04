@@ -1,0 +1,164 @@
+import { VerticalBox, HorizontalBox, Button, LineEdit, ScrollView } from "std-widgets.slint";
+
+export component MainWindow inherits Window {
+    in-out property <string> query: "";
+    in-out property <string> now-playing: "Nothing playing";
+    in-out property <string> status: "Ready";
+    in-out property <int> selected-tab: 0;
+
+    callback search(string);
+    callback play-demo;
+    callback select-tab(int);
+
+    background: #0d0d10;
+
+    VerticalBox {
+        padding: 18px;
+        spacing: 12px;
+
+        Text {
+            text: "NullSound";
+            color: white;
+            font-size: 30px;
+            font-weight: 700;
+        }
+
+        Text {
+            text: "Native Rust music player";
+            color: #9a9aa3;
+            font-size: 14px;
+        }
+
+        if selected-tab == 0: VerticalBox {
+            spacing: 12px;
+
+            Text {
+                text: "Good evening";
+                color: white;
+                font-size: 24px;
+                font-weight: 600;
+            }
+
+            Button {
+                text: "▶  Start demo playback";
+                clicked => { play-demo(); }
+            }
+
+            Rectangle {
+                background: #18181d;
+                border-radius: 18px;
+                min-height: 150px;
+
+                VerticalBox {
+                    padding: 18px;
+                    alignment: center;
+
+                    Text {
+                        text: "Your music, without the bloat.";
+                        color: white;
+                        font-size: 19px;
+                        horizontal-alignment: center;
+                    }
+
+                    Text {
+                        text: "Rust + Slint • fast • memory-safe";
+                        color: #9a9aa3;
+                        horizontal-alignment: center;
+                    }
+                }
+            }
+        }
+
+        if selected-tab == 1: VerticalBox {
+            spacing: 12px;
+
+            HorizontalBox {
+                spacing: 8px;
+
+                LineEdit {
+                    text <=> query;
+                    placeholder-text: "Search music";
+                    edited => { search(query); }
+                }
+
+                Button {
+                    text: "Search";
+                    clicked => { search(query); }
+                }
+            }
+
+            Text {
+                text: status;
+                color: #9a9aa3;
+                font-size: 13px;
+            }
+
+            ScrollView {
+                Text {
+                    text: "Search results will appear here.\n\nThe Rust networking layer is ready for YouTube Music integration.";
+                    color: white;
+                    font-size: 16px;
+                }
+            }
+        }
+
+        if selected-tab == 2: VerticalBox {
+            spacing: 12px;
+
+            Text {
+                text: "Library";
+                color: white;
+                font-size: 24px;
+                font-weight: 600;
+            }
+
+            Button { text: "Refresh playlists"; }
+            Button { text: "YouTube Music account"; }
+
+            Text {
+                text: "Playlists and downloaded music";
+                color: #9a9aa3;
+            }
+        }
+
+        Rectangle {
+            height: 72px;
+            background: #18181d;
+            border-radius: 18px;
+
+            HorizontalBox {
+                padding: 12px;
+                spacing: 12px;
+
+                Text {
+                    text: now-playing;
+                    color: white;
+                    vertical-alignment: center;
+                    horizontal-stretch: 1;
+                }
+
+                Button {
+                    text: "▶";
+                    clicked => { play-demo(); }
+                }
+            }
+        }
+
+        HorizontalBox {
+            spacing: 8px;
+
+            Button {
+                text: "Home";
+                clicked => { select-tab(0); }
+            }
+            Button {
+                text: "Search";
+                clicked => { select-tab(1); }
+            }
+            Button {
+                text: "Library";
+                clicked => { select-tab(2); }
+            }
+        }
+    }
+}
