@@ -1,5 +1,9 @@
 # NullSound
 
+<p align="center">
+  <img src="assets/brand/nullsound_logo.svg" alt="NullSound logo" width="180" />
+</p>
+
 **Your music. Your flow.** A modern, Android-first Flutter music player.
 
 ## Features
