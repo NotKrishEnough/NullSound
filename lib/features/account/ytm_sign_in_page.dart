@@ -34,7 +34,7 @@ class _YtmSignInPageState extends State<YtmSignInPage> {
       final ok = await widget.service.saveAndVerify(header);
       if (!mounted) return;
       if (ok) { Navigator.pop(context,true); return; }
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Could not verify YouTube Music session. Please try again.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text(widget.service.lastError ?? 'Could not verify YouTube Music session. Please try again.')));
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Could not read the sign-in session on this WebView.')));
     } finally {
