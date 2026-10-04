@@ -22,7 +22,9 @@ class YtmAccountService {
   Future<bool> saveAndVerify(String cookies) async {
     if (!cookies.contains('SAPISID') &&
         !cookies.contains('__Secure-3PAPISID') &&
-        !cookies.contains('SID')) return false;
+        !cookies.contains('SID')) {
+      return false;
+    }
     _cookies = cookies;
     try {
       final response = await _browse('FEmusic_library_corpus_playlists');
