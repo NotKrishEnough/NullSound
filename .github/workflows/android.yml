@@ -38,7 +38,9 @@ jobs:
           cache: true
 
       - name: Generate Android platform project
-        run: flutter create --platforms=android --project-name nullsound --org com.nke.nullsound .
+        run: |
+          flutter create --platforms=android --project-name nullsound --org com.nke.nullsound .
+          rm -rf test
 
       - name: Install dependencies
         run: flutter pub get
