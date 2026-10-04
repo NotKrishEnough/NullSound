@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../app/glass.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/audio/audio_provider.dart';
@@ -78,25 +79,26 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     final tracks = LibraryStore.tracks;
     final playlists = LibraryStore.playlists;
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('Your library'), actions: [
         if (account.isSignedIn) IconButton(tooltip: 'Sync YouTube Music playlists', onPressed: syncing ? null : syncPlaylists, icon: syncing ? const SizedBox(width:20,height:20,child:CircularProgressIndicator(strokeWidth:2)) : const Icon(Icons.sync)),
         IconButton(tooltip: account.isSignedIn ? 'YouTube Music connected' : 'Sign in to YouTube Music', onPressed: signIn, icon: Icon(account.isSignedIn ? Icons.account_circle : Icons.login)),
         IconButton(tooltip: 'Create playlist', onPressed: createPlaylist, icon: const Icon(Icons.add)),
       ]),
       body: Column(children: [
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: SegmentedButton<int>(
+        Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: GlassPanel(radius:24,padding:const EdgeInsets.all(5),child:SegmentedButton<int>(
           segments: const [
             ButtonSegment(value: 0, label: Text('Songs'), icon: Icon(Icons.music_note)),
             ButtonSegment(value: 1, label: Text('Playlists'), icon: Icon(Icons.queue_music)),
           ],
           selected: {tab}, onSelectionChanged: (value) => setState(() => tab = value.first),
-        )),
+        ))),
         if (account.isSignedIn && tab == 1) Padding(padding: const EdgeInsets.fromLTRB(16,8,16,0), child: Row(children:[const Expanded(child:Text('YouTube Music playlists')), TextButton(onPressed:syncing ? null : syncPlaylists, child:const Text('Sync'))])),
         if (account.isSignedIn && tab == 1 && remotePlaylists.isNotEmpty) SizedBox(height:110, child:ListView.builder(scrollDirection:Axis.horizontal,itemCount:remotePlaylists.length,itemBuilder:(context,index){final item=remotePlaylists[index];return SizedBox(width:210,child:Card(child:Padding(padding:const EdgeInsets.all(10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Icon(Icons.cloud_queue),Expanded(child:Align(alignment:Alignment.centerLeft,child:Text(item.title,maxLines:2,overflow:TextOverflow.ellipsis))),SizedBox(height:30,child:Align(alignment:Alignment.centerRight,child:TextButton(onPressed:syncing ? null : () => importRemotePlaylist(item),child:const Text('Import'))))]))));})),
         const SizedBox(height: 8),
         Expanded(child: tab == 0
           ? tracks.isEmpty
-            ? const Center(child: Text('Save songs from Search to find them here.'))
+            ? Center(child:GlassPanel(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.library_music_outlined,size:42,color:Theme.of(context).colorScheme.primary),const SizedBox(height:12),const Text('Your library is waiting',style:TextStyle(fontWeight:FontWeight.bold)),const SizedBox(height:6),const Text('Save songs from Search and they’ll show up here.',textAlign:TextAlign.center)])))
             : ListView(children: tracks.map((data) => ListTile(
                 leading: const Icon(Icons.music_note),
                 title: Text(data['title'] as String, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -104,7 +106,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                 onTap: () => playTrack(data),
               )).toList())
           : playlists.isEmpty
-            ? const Center(child: Text('Create a playlist to get started.'))
+            ? Center(child:GlassPanel(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.queue_music_rounded,size:42,color:Theme.of(context).colorScheme.primary),const SizedBox(height:12),const Text('Make it yours',style:TextStyle(fontWeight:FontWeight.bold)),const SizedBox(height:6),const Text('Create a playlist and collect your favourites.',textAlign:TextAlign.center)])))
             : ListView(children: playlists.map((playlist) {
                 final name = playlist['name'] as String;
                 final songs = List<Map<String, dynamic>>.from((playlist['tracks'] as List).map((e) => Map<String, dynamic>.from(e as Map)));
