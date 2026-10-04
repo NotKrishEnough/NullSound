@@ -77,6 +77,40 @@ class YtmAccountService {
     return decoded is Map<String,dynamic> ? decoded : null;
   }
 
+
+  Future<List<Map<String,String>>> fetchPlaylistTracks(String playlistId) async {
+    final data = await _browse(playlistId.startsWith('VL') ? playlistId : 'VL$playlistId');
+    if (data == null) return [];
+    final tracks = <Map<String,String>>[];
+    final seen = <String>{};
+    void walk(dynamic node) {
+      if (node is Map) {
+        final renderer = node['musicResponsiveListItemRenderer'];
+        if (renderer is Map) {
+          final videoId = renderer['playlistItemData']?['videoId'] ??
+            renderer['navigationEndpoint']?['watchEndpoint']?['videoId'];
+          final columns = renderer['flexColumns'] as List?;
+          String title = 'Unknown title';
+          String artist = 'Unknown artist';
+          if (columns != null && columns.isNotEmpty) {
+            final runs = columns[0]['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'] as List?;
+            if (runs != null && runs.isNotEmpty) title = runs.first['text']?.toString() ?? title;
+          }
+          if (columns != null && columns.length > 1) {
+            final runs = columns[1]['musicResponsiveListItemFlexColumnRenderer']?['text']?['runs'] as List?;
+            if (runs != null && runs.isNotEmpty) artist = runs.first['text']?.toString() ?? artist;
+          }
+          if (videoId is String && videoId.isNotEmpty && seen.add(videoId)) {
+            tracks.add({'id':videoId,'title':title,'artist':artist});
+          }
+        }
+        for (final value in node.values) { walk(value); }
+      } else if (node is List) { for (final value in node) { walk(value); } }
+    }
+    walk(data);
+    return tracks;
+  }
+
   Future<List<YtmPlaylist>> fetchPlaylists() async {
     final results = <YtmPlaylist>[];
     final seen = <String>{};
