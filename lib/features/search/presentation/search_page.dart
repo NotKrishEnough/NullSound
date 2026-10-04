@@ -79,7 +79,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           return stream.url.toString();
         },
       );
-    } catch (_) {
+    } catch (e) {
       if (mounted) setState(() => error = 'Playback failed: $e');
     }
   }
