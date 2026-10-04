@@ -7,13 +7,25 @@ class NullSoundApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => DynamicColorBuilder(
     builder: (lightDynamic, darkDynamic) {
-      final seed = lightDynamic?.primary ?? const Color(0xff6750a4);
+      const seed = Color(0xffbd829f);
+      final dark = darkDynamic ?? ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.dark);
+      final light = lightDynamic ?? ColorScheme.fromSeed(seedColor: seed);
       return MaterialApp(
         title: 'NullSound',
         debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.system,
-        theme: ThemeData(colorScheme: lightDynamic ?? ColorScheme.fromSeed(seedColor: seed), useMaterial3: true),
-        darkTheme: ThemeData(colorScheme: darkDynamic ?? ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.dark), useMaterial3: true),
+        themeMode: ThemeMode.dark,
+        theme: ThemeData(colorScheme: light, useMaterial3: true),
+        darkTheme: ThemeData(
+          colorScheme: dark,
+          useMaterial3: true,
+          scaffoldBackgroundColor: const Color(0xff171316),
+          appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, surfaceTintColor: Colors.transparent, elevation: 0),
+          navigationBarTheme: NavigationBarThemeData(
+            backgroundColor: Colors.transparent,
+            indicatorColor: dark.primary.withValues(alpha: .28),
+            labelTextStyle: WidgetStateProperty.all(const TextStyle(fontWeight: FontWeight.w600)),
+          ),
+        ),
         home: const AppShell(),
       );
     },
