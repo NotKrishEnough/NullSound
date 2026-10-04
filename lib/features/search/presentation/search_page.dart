@@ -33,7 +33,34 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     }
   }
 
-  MediaItem itemAt(int index) {\n    final video = results[index];\n    return MediaItem(id: video.id.value, title: video.title, artist: video.author, artUri: Uri.tryParse(video.thumbnails.highResUrl));\n  }\n\n  Future<void> save(int index) async {\n    await LibraryStore.saveTrack(itemAt(index));\n    if (!mounted) return;\n    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to your library')));\n  }\n\n  Future<void> addToPlaylist(int index) async {\n    final lists = LibraryStore.playlists;\n    if (lists.isEmpty) {\n      if (!mounted) return;\n      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Create a playlist in Library first')));\n      return;\n    }\n    final selected = await showModalBottomSheet<String>(context: context, builder: (context) => SafeArea(child: ListView(shrinkWrap: true, children: [\n      const ListTile(title: Text('Add to playlist')),\n      ...lists.map((p) => ListTile(title: Text(p['name'] as String), onTap: () => Navigator.pop(context, p['name'] as String))),\n    ])));\n    if (selected == null) return;\n    await LibraryStore.addToPlaylist(selected, itemAt(index));\n    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added to $selected')));\n  }\n\n  Future<void> play(int selectedIndex) async {
+  MediaItem itemAt(int index) {
+    final video = results[index];
+    return MediaItem(id: video.id.value, title: video.title, artist: video.author, artUri: Uri.tryParse(video.thumbnails.highResUrl));
+  }
+
+  Future<void> save(int index) async {
+    await LibraryStore.saveTrack(itemAt(index));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to your library')));
+  }
+
+  Future<void> addToPlaylist(int index) async {
+    final lists = LibraryStore.playlists;
+    if (lists.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Create a playlist in Library first')));
+      return;
+    }
+    final selected = await showModalBottomSheet<String>(context: context, builder: (context) => SafeArea(child: ListView(shrinkWrap: true, children: [
+      const ListTile(title: Text('Add to playlist')),
+      ...lists.map((p) => ListTile(title: Text(p['name'] as String), onTap: () => Navigator.pop(context, p['name'] as String))),
+    ])));
+    if (selected == null) return;
+    await LibraryStore.addToPlaylist(selected, itemAt(index));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added to $selected')));
+  }
+
+  Future<void> play(int selectedIndex) async {
     try {
       setState(() => error = null);
       final service = ref.read(streamingServiceProvider);
@@ -88,7 +115,14 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               ),
               title: Text(video.title, maxLines: 1, overflow: TextOverflow.ellipsis),
               subtitle: Text(video.author, maxLines: 1, overflow: TextOverflow.ellipsis),
-              trailing: PopupMenuButton<String>(\n                onSelected: (value) { if (value == 'save') save(index); if (value == 'playlist') addToPlaylist(index); },\n                itemBuilder: (_) => const [\n                  PopupMenuItem(value: 'save', child: Text('Save to library')),\n                  PopupMenuItem(value: 'playlist', child: Text('Add to playlist')),\n                ],\n                icon: const Icon(Icons.more_vert),\n              ),
+              trailing: PopupMenuButton<String>(
+                onSelected: (value) { if (value == 'save') save(index); if (value == 'playlist') addToPlaylist(index); },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'save', child: Text('Save to library')),
+                  PopupMenuItem(value: 'playlist', child: Text('Add to playlist')),
+                ],
+                icon: const Icon(Icons.more_vert),
+              ),
               onTap: () => play(index),
             );
           },
