@@ -1,10 +1,91 @@
 import 'package:flutter/material.dart';
-class SearchPage extends StatefulWidget { const SearchPage({super.key}); @override State<SearchPage> createState()=>_SearchPageState(); }
-class _SearchPageState extends State<SearchPage> {
- final controller=TextEditingController();
- @override void dispose(){controller.dispose();super.dispose();}
- @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('Search')),body:Padding(padding:const EdgeInsets.all(20),child:Column(children:[
- TextField(controller:controller,decoration:InputDecoration(hintText:'Songs, artists, albums…',prefixIcon:const Icon(Icons.search),filled:true,border:OutlineInputBorder(borderRadius:BorderRadius.circular(22),borderSide:BorderSide.none))),
- const SizedBox(height:24),const Text('Search the music you love')
- ])));
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/audio/audio_provider.dart';
+import '../../../core/streaming/streaming_provider.dart';
+
+class SearchPage extends ConsumerStatefulWidget {
+  const SearchPage({super.key});
+  @override
+  ConsumerState<SearchPage> createState() => _SearchPageState();
+}
+
+class _SearchPageState extends ConsumerState<SearchPage> {
+  final controller = TextEditingController();
+  bool loading = false;
+  String? error;
+  List<dynamic> results = [];
+
+  @override
+  void dispose() { controller.dispose(); super.dispose(); }
+
+  Future<void> search(String query) async {
+    if (query.trim().isEmpty) return;
+    setState(() { loading = true; error = null; });
+    try {
+      final found = await ref.read(streamingServiceProvider).search(query.trim());
+      if (mounted) setState(() => results = found);
+    } catch (e) {
+      if (mounted) setState(() => error = 'Search failed. Check your connection and try again.');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> play(dynamic video) async {
+    try {
+      setState(() => error = null);
+      final service = ref.read(streamingServiceProvider);
+      final stream = await service.resolve(video.id.value);
+      await ref.read(audioHandlerProvider).playStream(
+        url: stream.url.toString(),
+        id: video.id.value,
+        title: video.title,
+        artist: video.author,
+        artworkUrl: video.thumbnails.highResUrl,
+      );
+    } catch (e) {
+      if (mounted) setState(() => error = 'Could not start this track. Try another result.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Search')),
+    body: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(children: [
+        TextField(
+          controller: controller,
+          textInputAction: TextInputAction.search,
+          onSubmitted: search,
+          decoration: InputDecoration(
+            hintText: 'Songs, artists, albums…',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: IconButton(icon: const Icon(Icons.arrow_forward), onPressed: () => search(controller.text)),
+            filled: true,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
+          ),
+        ),
+        if (loading) const Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()),
+        if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
+        Expanded(child: ListView.builder(
+          itemCount: results.length,
+          itemBuilder: (context, index) {
+            final video = results[index];
+            return ListTile(
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(video.thumbnails.highResUrl, width: 56, height: 56, fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox(width: 56, height: 56, child: Icon(Icons.music_note))),
+              ),
+              title: Text(video.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Text(video.author, maxLines: 1, overflow: TextOverflow.ellipsis),
+              trailing: const Icon(Icons.play_circle_outline),
+              onTap: () => play(video),
+            );
+          },
+        )),
+      ]),
+    ),
+  );
 }
