@@ -408,7 +408,6 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
                                       _PlayerIconButton(
                                         icon: Icons.favorite_border_rounded,
                                         onTap: () {},
-                                      );
                                       ),
                                     ],
                                   ),
@@ -562,11 +561,6 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
                                         icon: Icons.lyrics_outlined,
                                         label: 'Lyrics',
                                         onTap: () => setState(() => _showLyrics = !_showLyrics),
-                                      ),
-                                      _BottomAction(
-                                        icon: Icons.share_outlined,
-                                        label: 'Credits',
-                                        onTap: () => _showCreditsSheet(item),
                                       ),
                                       _BottomAction(
                                         icon: Icons.info_outline_rounded,
