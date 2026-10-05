@@ -22,6 +22,7 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
   bool _seeking = false;
   double _seekValue = 0;
   double _dragOffset = 0;
+  double _horizontalDrag = 0;
 
   @override
   void initState() {
@@ -186,6 +187,19 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
                 ),
                 SafeArea(
                   child: GestureDetector(
+                    onHorizontalDragUpdate: (details) {
+                      _horizontalDrag += details.primaryDelta ?? 0;
+                    },
+                    onHorizontalDragEnd: (_) {
+                      final delta = _horizontalDrag;
+                      _horizontalDrag = 0;
+                      if (delta.abs() < 70) return;
+                      if (delta < 0) {
+                        widget.handler.skipToNext();
+                      } else {
+                        widget.handler.skipToPrevious();
+                      }
+                    },
                     onVerticalDragUpdate: (details) {
                       if ((details.primaryDelta ?? 0) > 0) {
                         setState(() {
