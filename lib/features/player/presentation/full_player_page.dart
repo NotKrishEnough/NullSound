@@ -24,7 +24,6 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
   double _dragOffset = 0;
   double _horizontalDrag = 0;
   bool _showLyrics = false;
-  bool _showCredits = false;
   bool _showArtwork = false;
   bool _shuffle = false;
   int _repeatMode = 0;
