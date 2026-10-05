@@ -564,6 +564,29 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
   }
 }
 
+class _GlassSheet extends StatelessWidget {
+  const _GlassSheet({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface.withValues(alpha: .96),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          child: SafeArea(child: child),
+        ),
+      ),
+    );
+  }
+}
+
 class _PlayerIconButton extends StatelessWidget {
   const _PlayerIconButton({
     required this.icon,
