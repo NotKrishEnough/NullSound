@@ -207,10 +207,7 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
                         child: LayoutBuilder(
                           builder: (context, constraints) {
                             final compact = constraints.maxHeight < 720;
-                            final artworkSize = (constraints.maxWidth - 42).clamp(
-                              220.0,
-                              compact ? 360.0 : 430.0,
-                            );
+                            final artworkSize = (constraints.maxWidth - 42).clamp(220.0, compact ? 360.0 : 430.0).toDouble();
 
                             return Padding(
                               padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
