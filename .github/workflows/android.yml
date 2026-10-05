@@ -2,7 +2,7 @@ name: Android CI and Release
 
 on:
   push:
-    branches: [main]
+    branches: [main, apple-music-player]
     tags: ['v*']
   pull_request:
     branches: [main]
