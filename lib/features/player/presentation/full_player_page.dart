@@ -23,6 +23,10 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
   double _seekValue = 0;
   double _dragOffset = 0;
   double _horizontalDrag = 0;
+  bool _showLyrics = false;
+  bool _shuffle = false;
+  int _repeatMode = 0;
+  Duration? _sleepTimer;
 
   @override
   void initState() {
@@ -61,6 +65,74 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
   }
 
   void _close() => Navigator.of(context).pop();
+
+  Future<void> _showSleepTimer() async {
+    final selected = await showModalBottomSheet<Duration?>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _GlassSheet(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Sleep Timer', style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700)),
+            ...[null, 15, 30, 45, 60, 120].map((minutes) {
+              final duration = minutes == null ? null : Duration(minutes: minutes);
+              return ListTile(
+                leading: Icon(minutes == null ? Icons.timer_off_rounded : Icons.timer_rounded),
+                title: Text(minutes == null ? 'Off' : '$minutes minutes'),
+                trailing: _sleepTimer == duration ? const Icon(Icons.check_rounded) : null,
+                onTap: () => Navigator.pop(context, duration),
+              );
+            }),
+            SizedBox(height: MediaQuery.paddingOf(context).bottom),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _sleepTimer = selected);
+    if (selected != null) {
+      Future.delayed(selected, () {
+        if (mounted && _sleepTimer == selected) {
+          widget.handler.pause();
+          setState(() => _sleepTimer = null);
+        }
+      });
+    }
+  }
+
+  Future<void> _showOptions() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _GlassSheet(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Playback', style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700)),
+            SwitchListTile(
+              value: _shuffle,
+              onChanged: (v) => setState(() => _shuffle = v),
+              title: const Text('Shuffle'),
+              secondary: const Icon(Icons.shuffle_rounded),
+            ),
+            ListTile(
+              leading: const Icon(Icons.repeat_rounded),
+              title: const Text('Repeat'),
+              trailing: Text(_repeatMode == 0 ? 'Off' : _repeatMode == 1 ? 'All' : 'One'),
+              onTap: () => setState(() => _repeatMode = (_repeatMode + 1) % 3),
+            ),
+            ListTile(
+              leading: const Icon(Icons.timer_rounded),
+              title: const Text('Sleep timer'),
+              onTap: _showSleepTimer,
+            ),
+            SizedBox(height: MediaQuery.paddingOf(context).bottom),
+          ],
+        ),
+      ),
+    );
+  }
 
   Future<void> _showQueue() async {
     final items = widget.handler.queue.value;
@@ -245,7 +317,7 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
                                       const Spacer(),
                                       _PlayerIconButton(
                                         icon: Icons.more_horiz_rounded,
-                                        onTap: () {},
+                                        onTap: _showOptions,
                                       ),
                                     ],
                                   ),
@@ -407,7 +479,7 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
                                         children: [
                                           _PlayerIconButton(
                                             icon: Icons.shuffle_rounded,
-                                            onTap: () {},
+                                            onTap: () => setState(() => _shuffle = !_shuffle),
                                           ),
                                           _PlayerIconButton(
                                             icon: Icons.skip_previous_rounded,
@@ -441,7 +513,7 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
                                           ),
                                           _PlayerIconButton(
                                             icon: Icons.repeat_rounded,
-                                            onTap: () {},
+                                            onTap: () => setState(() => _repeatMode = (_repeatMode + 1) % 3),
                                           ),
                                         ],
                                       );
@@ -464,7 +536,7 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
                                       _BottomAction(
                                         icon: Icons.lyrics_outlined,
                                         label: 'Lyrics',
-                                        onTap: () {},
+                                        onTap: () => setState(() => _showLyrics = !_showLyrics),
                                       ),
                                       _BottomAction(
                                         icon: Icons.share_outlined,
