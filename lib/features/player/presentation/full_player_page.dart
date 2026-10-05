@@ -289,8 +289,10 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
                       _horizontalDrag = 0;
                       if (delta.abs() < 70) return;
                       if (delta < 0) {
+                        HapticFeedback.mediumImpact();
                         widget.handler.skipToNext();
                       } else {
+                        HapticFeedback.mediumImpact();
                         widget.handler.skipToPrevious();
                       }
                     },
@@ -563,7 +565,12 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
                                       ),
                                       _BottomAction(
                                         icon: Icons.share_outlined,
-                                        label: 'Share',
+                                        label: 'Credits',
+                                        onTap: () => _showCreditsSheet(item),
+                                      ),
+                                      _BottomAction(
+                                        icon: Icons.info_outline_rounded,
+                                        label: 'Credits',
                                         onTap: () => _showCreditsSheet(item),
                                       ),
                                     ],
