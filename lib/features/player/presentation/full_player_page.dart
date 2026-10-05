@@ -24,6 +24,8 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
   double _dragOffset = 0;
   double _horizontalDrag = 0;
   bool _showLyrics = false;
+  bool _showCredits = false;
+  bool _showArtwork = false;
   bool _shuffle = false;
   int _repeatMode = 0;
   Duration? _sleepTimer;
@@ -99,6 +101,26 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
         }
       });
     }
+  }
+
+  Future<void> _showCreditsSheet(MediaItem? item) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _GlassSheet(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(item?.title ?? 'Song', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 16),
+            ListTile(leading: const Icon(Icons.person_outline_rounded), title: Text(item?.artist ?? 'Unknown artist'), subtitle: const Text('Artist')),
+            ListTile(leading: const Icon(Icons.album_outlined), title: Text(item?.album ?? 'Unknown album'), subtitle: const Text('Album')),
+            ListTile(leading: const Icon(Icons.music_note_rounded), title: const Text('NullSound'), subtitle: const Text('Source')),
+            SizedBox(height: MediaQuery.paddingOf(context).bottom),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _showOptions() async {
@@ -384,6 +406,7 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
                                       _PlayerIconButton(
                                         icon: Icons.favorite_border_rounded,
                                         onTap: () {},
+                                      );
                                       ),
                                     ],
                                   ),
@@ -541,7 +564,7 @@ class _FullPlayerPageState extends State<FullPlayerPage> {
                                       _BottomAction(
                                         icon: Icons.share_outlined,
                                         label: 'Share',
-                                        onTap: () {},
+                                        onTap: () => _showCreditsSheet(item),
                                       ),
                                     ],
                                   ),
