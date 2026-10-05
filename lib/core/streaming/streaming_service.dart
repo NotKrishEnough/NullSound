@@ -42,7 +42,7 @@ class StreamingService {
     throw StateError(
       'YouTube did not provide a playable audio stream. '
       'The video may require YouTube sign-in or be temporarily restricted.'
-      '\${lastError == null ? '' : ' Last error: $lastError'}',
+      '${lastError == null ? '' : ' Last error: $lastError'}',
     );
   }
 
