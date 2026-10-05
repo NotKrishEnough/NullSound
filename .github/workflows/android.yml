@@ -21,12 +21,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -68,7 +68,7 @@ jobs:
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             PREVIOUS_TAG="$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
             if [ -n "$PREVIOUS_TAG" ]; then
-              git log --pretty=format:'- %s (%h)' "$PREVIOUS_TAG".." ${GITHUB_REF_NAME}" > dist/CHANGELOG.md
+              git log --pretty=format:'- %s (%h)' "$PREVIOUS_TAG".."$GITHUB_REF_NAME" > dist/CHANGELOG.md
             else
               git log -10 --pretty=format:'- %s (%h)' > dist/CHANGELOG.md
             fi
