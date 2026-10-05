@@ -77,6 +77,12 @@ class NullAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
     }
   }
 
+  Future<void> skipToQueueIndex(int index) async {
+    if (index < 0 || index >= _items.length || index == _index) return;
+    _index = index;
+    await _loadCurrent(autoplay: true);
+  }
+
   @override
   Future<void> skipToNext() async {
     if (_index + 1 >= _items.length) return;
